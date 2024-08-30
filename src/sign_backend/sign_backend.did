@@ -1,0 +1,17 @@
+
+type SignedTransaction = record { raw_transaction: text; transaction_hash: text };
+
+type EthereumTransaction = record {
+    nonce: nat64;
+    gas_price: nat64;
+    gas_limit: nat64;
+    to: text;
+    value: nat64;
+    data: vec nat8;
+    chain_id: nat64;
+};
+
+service : {
+    public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
+    sign_transaction: (EthereumTransaction) -> (variant { Ok: SignedTransaction; Err: text });
+}
