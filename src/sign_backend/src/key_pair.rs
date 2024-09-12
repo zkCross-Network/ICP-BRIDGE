@@ -17,7 +17,7 @@ pub async fn generate_key_pair() -> Result<String, String> {
         derivation_path: vec![],
         key_id: EcdsaKeyId {
             curve: EcdsaCurve::Secp256k1,
-            name: "dfx_test_key".to_string(),
+            name: "test_key_1".to_string(),
         },
     };
 

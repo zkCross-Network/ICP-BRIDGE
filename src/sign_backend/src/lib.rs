@@ -8,10 +8,11 @@ use evm_rpc_canister_types::RpcServices;
 use ic_cdk::api::management_canister::http_request::http_request;
 use ic_cdk::api::management_canister::http_request::HttpMethod;
 use evm_rpc_canister_types::MultiGetTransactionReceiptResult;
+use ic_cdk::export_candid;
 use serde::{Deserialize,Serialize};
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-
+use evm_rpc_canister_types::MultiSendRawTransactionResult;
 use ic_cdk::api::management_canister::http_request::CanisterHttpRequestArgument;
 
 mod helper;
@@ -196,7 +197,7 @@ pub async fn verify_trans(
 
 
 
-        let result = send_eth::send_eth(to, release_eth?,dest_chain_id).await;
+    let result = send_eth::send_eth(to, release_eth?,dest_chain_id).await;
 
     use crate::MultiGetTransactionReceiptResult::Consistent;
     use evm_rpc_canister_types::GetTransactionReceiptResult;
@@ -231,3 +232,4 @@ pub async fn verify_trans(
 
 
 
+ic_cdk::export_candid!();

@@ -35,6 +35,10 @@ type MultiGetTransactionReceiptResult = variant {
   Consistent : GetTransactionReceiptResult;
   Inconsistent : vec record { RpcService; GetTransactionReceiptResult };
 };
+type MultiSendRawTransactionResult = variant {
+  Consistent : SendRawTransactionResult;
+  Inconsistent : vec record { RpcService; SendRawTransactionResult };
+};
 type ProviderError = variant {
   TooFewCycles : record { expected : nat; received : nat };
   MissingRequiredProvider;
@@ -50,9 +54,10 @@ type RejectionCode = variant {
   SysFatal;
   CanisterReject;
 };
-type Result = variant { Ok : text; Err : text };
-type Result_1 = variant { Ok; Err : text };
-type Result_2 = variant { Ok : MultiGetTransactionReceiptResult; Err : text };
+type Result = variant { Ok : float64; Err : text };
+type Result_1 = variant { Ok : text; Err : text };
+type Result_2 = variant { Ok : MultiSendRawTransactionResult; Err : text };
+type Result_3 = variant { Ok : MultiGetTransactionReceiptResult; Err : text };
 type RpcApi = record { url : text; headers : opt vec HttpHeader };
 type RpcError = variant {
   JsonRpcError : JsonRpcError;
@@ -69,6 +74,16 @@ type RpcService = variant {
   EthMainnet : EthMainnetService;
   Chain : nat64;
   Provider : nat64;
+};
+type SendRawTransactionResult = variant {
+  Ok : SendRawTransactionStatus;
+  Err : RpcError;
+};
+type SendRawTransactionStatus = variant {
+  Ok : opt text;
+  NonceTooLow;
+  NonceTooHigh;
+  InsufficientFunds;
 };
 type TransactionReceipt = record {
   to : text;
@@ -94,8 +109,8 @@ type ValidationError = variant {
   InvalidHex : text;
 };
 service : {
-  generate_key_pair : () -> (Result);
-  send_eth : (text, nat,text) -> (Result_1);
-  verify_trans : (text,text,text,text) -> (Result_2);
-
+  fetch_crypto_prices_and_calculate_ethereum : (float64) -> (Result);
+  generate_key_pair : () -> (Result_1);
+  send_eth : (text, float64, text) -> (Result_2);
+  verify_trans : (text, text, text, text) -> (Result_3);
 }

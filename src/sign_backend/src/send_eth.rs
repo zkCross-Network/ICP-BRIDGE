@@ -2,6 +2,7 @@ use alloy_primitives::keccak256;
 use candid::{Nat, Principal};
 
 use evm_rpc_canister_types::EthSepoliaService;
+use evm_rpc_canister_types::MultiSendRawTransactionResult;
 use evm_rpc_canister_types::RpcServices;
 use evm_rpc_canister_types::{
     BlockTag, EvmRpcCanister, GetTransactionCountArgs, GetTransactionCountResult,
@@ -23,23 +24,24 @@ use crate::helper::nat_to_u256;
 use crate::helper::nat_to_u64;
 
 #[ic_cdk::update]
-pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<(), String> {
+pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<MultiSendRawTransactionResult, String> {
     use alloy_eips::eip2718::Encodable2718;
     use num_traits::ToPrimitive;
 
-    use alloy_primitives::Bytes;
+
     use ethers_core::types::U256;
     use evm_rpc_canister_types::RpcApi;
 
     ic_cdk::println!("to: {:?}", to);
     // Parse the recipient Ethereum address
-    
+
     let chain_id: u64 = dest_chain_id.parse::<u64>().expect("Failed to parse chain ID");
 
     let block_tag = BlockTag::Latest; // or other variants like BlockTag::Number(u64), BlockTag::Earliest, etc.
 
     let get_transaction_count_args = GetTransactionCountArgs {
-        address: "0xB6Db51070abB50a18187c688Ff76E0B0e094FEF8".to_string(),
+        // address: "0xB6Db51070abB50a18187c688Ff76E0B0e094FEF8".to_string(), //for local 
+        address: "0xb8C7c5Adf5080E15a6a71F57e2d5f4a21AfE8775".to_string(),
         block: block_tag, // Pass the correct BlockTag here
     };
 
@@ -50,7 +52,7 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
             RpcServices::EthSepolia(Some(vec![EthSepoliaService::Alchemy])),
             None, // Option<RpcConfig>, if you have a specific configuration
             get_transaction_count_args_clone, // Use the cloned args
-            2_000_000_000_u128, // u128 argument
+            200_000_000_000_u128, // u128 argument
         )
         .await
         .unwrap_or_else(|e| panic!("failed to get transaction count, error: {:?}", e));
@@ -84,6 +86,8 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
     // Call a function to estimate transaction fees
     let (gas_limit, max_fee_per_gas, max_priority_fee_per_gas) = estimate_transaction_fees().await;
 
+
+    //for Erc20 token 
     let function_signature = "transfer(address,uint256)";
     let function_selector = &keccak256(function_signature.as_bytes())[..4];
 
@@ -97,6 +101,8 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
         .parse::<Address>()
         .map_err(|e| format!("Failed to parse recipient_address: {}", e))?;
 
+
+     //CallData Generated    
     // Encode the function call data
     let mut data = Vec::new();
     data.extend_from_slice(function_selector);
@@ -129,13 +135,13 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
 
     let message_hash = transaction.signature_hash().0;
 
-    // Print the transaction (for debugging)
+
 
     // Define derivation_path and key_id
     let derivation_path = vec![]; // Replace with the actual derivation path
     let key_id = EcdsaKeyId {
         curve: EcdsaCurve::Secp256k1,
-        name: "dfx_test_key".to_string(), // Replace with the actual key ID name
+        name: "test_key_1".to_string(), // Replace with the actual key ID name
     };
 
     // Sign the transaction hash
@@ -201,7 +207,7 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
             rpc_service,
             None, // You can adjust this depending on other parameters you need.
             raw_transaction_hex.clone(),
-            2_000_000_000_u128, // Gas price in wei.
+            200_000_000_000_u128,
         )
         .await
         .unwrap_or_else(|e| {
@@ -265,5 +271,5 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<()
     // let recovery_id = compute_recovery_id(&tx_hash_array, &signature_array);
     // ic_cdk::println!("recovery_id: {:?}", recovery_id);
 
-    Ok(())
+    Ok(result)
 }
