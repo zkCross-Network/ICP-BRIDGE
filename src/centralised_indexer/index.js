@@ -15,19 +15,19 @@ const evmBlockScanner = async () => {
 
     console.log("idenityt", identity.getPrincipal().toString());
 
-    const canisterId = "bkyz2-fmaaa-aaaaa-qaaaq-cai";
+    const canisterId = "br5f7-7uaaa-aaaaa-qaaca-cai";
 
     const signBackend = createActor(canisterId, {
       agentOptions: {
         identity,
-        host: "http://127.0.0.1:41367",
+        host: "http://127.0.0.1:8080",  
       },
     });
 
     console.log("signBackend", signBackend);
     //recheck missed Lock Events on common contract
     //   console.log("Gettings logs for evmBLockScanner: ", network);
-    const fromBlockNumber = 6637300;
+    const fromBlockNumber = 80958043;
 
     //   const fromBlockNumber = await redis.getLastSyncBlockNumber(
     //     network,
@@ -50,16 +50,18 @@ const evmBlockScanner = async () => {
     let transac;
     let des;
     let amount;
+    let dest_chain_id;
     for (const log of logs) {
-      const parsedLog = await contract.interface.parseLog(log);
+      const parsedLog =  contract.interface.parseLog(log);
       console.log("parsedLog: ", parsedLog);
       amount = parsedLog.args.amount.toString();
       des = parsedLog.args.des_to;
+      dest_chain_id = parsedLog.args.dest_chain_id.toString()
       console.log("Transaction Hash: ", log.transactionHash);
       transac = log.transactionHash;
     }
 
-    const result = await signBackend.verify_trans(transac, des, amount);
+    const result = await signBackend.verify_trans(transac, des, amount,dest_chain_id);
     console.log("Signed backend", result.Ok);
     // for (const log of logs) {
     //   const parsedLog = contract.interface.parseLog(log);

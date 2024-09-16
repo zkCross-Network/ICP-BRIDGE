@@ -1,3 +1,4 @@
+use alloy_primitives::Address;
 use alloy_primitives::U256;
 use candid::{Nat, Principal};
 use evm_rpc_canister_types::EthSepoliaService;
@@ -12,6 +13,24 @@ pub const EVM_RPC_CANISTER_ID: Principal =
     Principal::from_slice(b"\x00\x00\x00\x00\x02\x30\x00\xCC\x01\x01"); // 7hfb6-caaaa-aaaar-qadga-cai
 pub const EVM_RPC: EvmRpcCanister = EvmRpcCanister(EVM_RPC_CANISTER_ID);
 
+
+const NETWORK: &str = "local";
+pub fn get_network_config() -> (&'static str, &'static str) {
+    match NETWORK {
+        "local" => (
+            "0xB6Db51070abB50a18187c688Ff76E0B0e094FEF8", // address_local
+            "dfx_test_key" // ecdsa_key_local
+        ),
+        "mainnet" => (
+            "0xA2750976d1Ec8FF2c8Aeb0e46a9df6053e569931", // address_main
+            "test_key_1" // ecdsa_key_main
+        ),
+        _ => panic!("Unknown network!"),
+    }
+}
+
+
+
 pub async fn nat_to_u64(nat: Nat) -> u64 {
     use num_traits::cast::ToPrimitive;
     nat.0
@@ -20,8 +39,8 @@ pub async fn nat_to_u64(nat: Nat) -> u64 {
 }
 
 pub async fn estimate_transaction_fees() -> (u128, u128, u128) {
-    const GAS_LIMIT: u128 = 500_000; // Gas limit
-    const MAX_FEE_PER_GAS: u128 = 25_000_000_000; // Updated max fee per gas to include priority fee
+    const GAS_LIMIT: u128 = 50_000; // Gas limit
+    const MAX_FEE_PER_GAS: u128 = 30_000_000_000; // Updated max fee per gas to include priority fee
     const MAX_PRIORITY_FEE_PER_GAS: u128 = 10_000_000_000; // Max priority fee per gas
     
     (GAS_LIMIT, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS)

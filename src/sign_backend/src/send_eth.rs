@@ -22,6 +22,7 @@ pub const EVM_RPC: EvmRpcCanister = EvmRpcCanister(EVM_RPC_CANISTER_ID);
 use crate::helper::estimate_transaction_fees;
 use crate::helper::nat_to_u256;
 use crate::helper::nat_to_u64;
+use crate::helper::get_network_config;
 
 #[ic_cdk::update]
 pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<MultiSendRawTransactionResult, String> {
@@ -38,12 +39,14 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<Mu
     let chain_id: u64 = dest_chain_id.parse::<u64>().expect("Failed to parse chain ID");
 
     let block_tag = BlockTag::Latest; // or other variants like BlockTag::Number(u64), BlockTag::Earliest, etc.
+    let (canister_address, ecdsa_key) = get_network_config(); // Destructure the tuple to get only the address
 
     let get_transaction_count_args = GetTransactionCountArgs {
-        // address: "0xB6Db51070abB50a18187c688Ff76E0B0e094FEF8".to_string(), //for local 
-        address: "0xb8C7c5Adf5080E15a6a71F57e2d5f4a21AfE8775".to_string(),
-        block: block_tag, // Pass the correct BlockTag here
+      
+        address: canister_address.to_string(), //for local 
+        block: block_tag, 
     };
+    
 
     let get_transaction_count_args_clone = get_transaction_count_args.clone();
 
@@ -119,6 +122,8 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<Mu
 
     let amount_nat = Nat::from(amount as u128);
 
+    ic_cdk::println!("amount_nat , {:?}", amount_nat);
+
     // Create the transaction
     let transaction = TxEip1559 {
         chain_id,
@@ -141,7 +146,7 @@ pub async fn send_eth(to: String, amount: f64,dest_chain_id:String) -> Result<Mu
     let derivation_path = vec![]; // Replace with the actual derivation path
     let key_id = EcdsaKeyId {
         curve: EcdsaCurve::Secp256k1,
-        name: "test_key_1".to_string(), // Replace with the actual key ID name
+        name: ecdsa_key.to_string(), // Replace with the actual key ID name
     };
 
     // Sign the transaction hash

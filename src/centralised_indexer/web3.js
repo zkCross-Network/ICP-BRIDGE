@@ -23,7 +23,7 @@ import * as alchemy from "alchemy-sdk";
 
 export const gettokenAndAddress = () => {
   // 
-  let address="0xe5a191e6c47178af31a571e4438d7796e09bfa37";
+  let address="0x9897cb021a49024F0B0076Dc5b53eBdB5e0253e6";
   // let address = "0xFaFCeF66155B0140AFaa2987Bbecf16D38125FdE"; -> local 
   let token = "0xbacef2640862B42eECcFeAb9Bf750476aE7decc6";
   //lock token 

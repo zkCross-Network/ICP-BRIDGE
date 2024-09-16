@@ -4,20 +4,25 @@ use ic_cdk::api::management_canister::ecdsa::{
 };
 use ic_cdk::id;
 use k256::PublicKey;
+use std::env;
+use crate::helper::get_network_config;
+
 use sha3::{Digest, Keccak256};
 
 #[ic_cdk::update]
 pub async fn generate_key_pair() -> Result<String, String> {
+    let (_, ecdsa_key) = get_network_config(); // Destructure the tuple to get only the address
+
     // Request the public key from the management canister
 
     let canister_principal = id();
-
+   
     let request = EcdsaPublicKeyArgument {
         canister_id: None,
         derivation_path: vec![],
         key_id: EcdsaKeyId {
             curve: EcdsaCurve::Secp256k1,
-            name: "test_key_1".to_string(),
+            name: ecdsa_key.to_string(),
         },
     };
 
