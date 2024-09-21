@@ -1,0 +1,31 @@
+{
+  "canisters": {
+    "sign_backend": {
+      "candid": "src/sign_backend/sign_backend.did",
+      "package": "sign_backend",
+      "type": "rust"
+    },
+    "evm_rpc": {
+      "type": "pull",
+      "id": "7hfb6-caaaa-aaaar-qadga-cai"
+    },
+    "sign_frontend": {
+      "dependencies": [
+        "sign_backend"
+      ],
+      "source": [
+        "src/sign_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "sign_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

@@ -1,0 +1,32 @@
+[package]
+name = "sign_backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.12.0"
+ethers-core = "0.6.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4.3"
+parity-scale-codec = "2.0.0"
+rlp = "0.4"
+sha3 = "0.9.1"
+num-traits = "0.2.19"
+candid = "0.10"
+evm-rpc-canister-types = "0.1.2"
+alloy-consensus = "0.1.3"
+alloy-eips = "0.1.3"
+alloy-primitives = "0.7.6"
+ic-ethereum-types = { git = "https://github.com/dfinity/ic", tag = "release-2024-06-26_23-01-base", package = "ic-ethereum-types" }
+k256 = { version = "0.12.0", features = ["ecdsa"] }
+# Enable `custom` feature of k256's getrandom dependency. See lib.rs for more details.
+getrandom = { version = "0.2", features = ["custom"] }
+ethers = "2.0" 
+num-bigint = "0.4"
+lazy_static = "1.4"
