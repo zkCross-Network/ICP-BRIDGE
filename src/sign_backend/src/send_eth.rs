@@ -225,24 +225,7 @@ pub async fn send_eth(
         raw_transaction_hash
     );
 
-    // let recovered_address = match recover(&message_hash, signature_bytes.clone(), recovery_id.as_i32()) {
-    //     Ok(address) => address,
-    //     Err(err) => {
-    //         eprintln!("Failed to recover address: {:?}", err);
-    //         return;
-    //     }
-    // };
-
-    // // Expected canister address
-    // let canister_address: Address = "0x9A95E891a9727278D82e90cD9d78C86b8a9fFa5C".parse().expect("Failed to parse address");
-
-    // if recovered_address == canister_address {
-    //     println!("Address matches.");
-    // } else {
-    //     println!("Address mismatch. Expected: {:?}, but got: {:?}", canister_address, recovered_address);
-    // }
-
-    // Convert the encoded transaction to a hex string with "0x" prefix
+  
     let raw_transaction_hex = format!("0x{}", hex::encode(&tx_bytes));
     let custom_rpc_url = "https://eth-sepolia.public.blastapi.io";
 
@@ -289,41 +272,6 @@ pub async fn send_eth(
             ic_cdk::trap("Status is inconsistent");
         }
     };
-
-    // let (result,) = EVM_RPC
-    // .eth_send_raw_transaction(
-    //     RpcServices::EthSepolia(Some(vec![
-    //         EthSepoliaService::Alchemy,
-    //         EthSepoliaService::BlockPi,
-    //         EthSepoliaService::Ankr,
-    //         EthSepoliaService::PublicNode,
-    //     ])),
-    //     None, // You can adjust this depending on other parameters you need.
-    //     raw_transaction_hex.clone(),
-    //     200_000_000_000_u128,
-    // )
-    // .await
-    // .unwrap_or_else(|e| {
-    //     panic!(
-    //         "failed to send raw transaction {}, error: {:?}",
-    //         raw_transaction_hex, e
-    //     )
-    // });
-
-    // let (result,) = EVM_RPC
-    //     .eth_send_raw_transaction(
-    //         RpcServices::EthSepolia(Some(vec![EthSepoliaService::Alchemy])),
-    //         None,
-    //         raw_transaction_hex.clone(),
-    //         2_000_000_000_u128,
-    //     )
-    //     .await
-    //     .unwrap_or_else(|e| {
-    //         panic!(
-    //             "failed to send raw transaction {}, error: {:?}",
-    //             raw_transaction_hex, e
-    //         )
-    //     });
 
     ic_cdk::println!(
             "Result of sending raw transaction {}: {:?}. \
