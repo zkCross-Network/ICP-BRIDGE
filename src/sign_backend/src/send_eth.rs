@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use alloy_primitives::keccak256;
 use alloy_primitives::Bytes;
 use candid::{Nat, Principal};
@@ -27,29 +29,44 @@ use crate::helper::estimate_transaction_fees;
 use crate::helper::get_network_config;
 use crate::helper::nat_to_u256;
 use crate::helper::nat_to_u64;
-use crate::key_pair::PublicKeyStore;
 
-async fn verify(signature_hex: String, message: Vec<u8>) -> Result<bool, String> {
-    let public_key_hex = PublicKeyStore::get().ok_or("Public key not found")?;
-    ic_cdk::println!("public_key_hex: {:?}", public_key_hex);
+async fn verify(signature_hex: &[u8], message: &[u8]) -> Result<bool, String> {
+    let public_key_hex = "02024f9cd747c0ad2ee7978b018d1a78021621429cc3bbc69c6e6a4a49436241b8";
 
-    let signature_bytes = hex::decode(signature_hex).expect("failed to hex-decode signature");
-    let pubkey_bytes = hex::decode(public_key_hex).expect("failed to hex-decode public key");
+    // Decode the public key
+    let pubkey_bytes = hex::decode(public_key_hex)
+        .map_err(|e| format!("failed to hex-decode public key: {}", e))?;
+
+    // Decode the signature
+    let signature_bytes = hex::decode(hex::encode(signature_hex)) // Convert to hex then back to bytes
+        .map_err(|e| format!("failed to hex-decode signature: {}", e))?;
+
+    // Diagnostic output
+    ic_cdk::println!("signature_bytes: {:?}", signature_bytes);
+    ic_cdk::println!("signature_bytes length: {}", signature_bytes.len());
+
+    // Ensure the signature length is correct
+    if signature_bytes.len() != 64 {
+        return Err("Signature must be exactly 64 bytes".to_string());
+    }
+
+    let message_bytes = message;
 
     use k256::ecdsa::signature::Verifier;
+
+    // Attempt to deserialize the signature
     let signature = k256::ecdsa::Signature::try_from(signature_bytes.as_slice())
-        .expect("failed to deserialize signature");
+        .map_err(|e| format!("failed to deserialize signature: {}", e))?;
 
-    ic_cdk::println!("signature verify : {:?}", signature);
+    // Deserialize the public key
+    let verifying_key = k256::ecdsa::VerifyingKey::from_sec1_bytes(&pubkey_bytes)
+        .map_err(|e| format!("failed to deserialize sec1 encoding into public key: {}", e))?;
 
-    let is_signature_valid = k256::ecdsa::VerifyingKey::from_sec1_bytes(&pubkey_bytes)
-        .expect("failed to deserialize sec1 encoding into public key")
-        .verify(&message, &signature)
-        .is_ok();
+    // Verify the signature
+    let is_signature_valid = verifying_key.verify(message_bytes, &signature).is_ok();
 
     Ok(is_signature_valid)
 }
-
 #[ic_cdk::update]
 pub async fn send_eth(
     to: String,
@@ -181,6 +198,8 @@ pub async fn send_eth(
     // Sign the transaction hash
 
     let canister_id_blob = ic_cdk::id().as_slice().to_vec();
+    // let public_key_hex = PublicKeyStore::get().ok_or("Public key not found")?;
+    // let pubkey_bytes = hex::decode(public_key_hex).expect("failed to hex-decode public key");
 
     let (result,) =
         ic_cdk::api::management_canister::ecdsa::sign_with_ecdsa(SignWithEcdsaArgument {
@@ -197,7 +216,6 @@ pub async fn send_eth(
     ic_cdk::println!("signature_hex  , {:?}", signature_hex);
     // let resp = verify(signature_hex, message_hash.to_vec().clone()).await;
 
-
     let signature_length = result.signature.len();
     let signature = <[u8; 64]>::try_from(result.signature).unwrap_or_else(|_| {
         panic!(
@@ -206,11 +224,16 @@ pub async fn send_eth(
         )
     });
 
+    let signature_hex = hex::encode(signature);
+
+    // Convert message hash to hex
+    // let message_hash_hex_1 = hex::encode(message_hash);
+
+    // Verify the signature
+    let bool_verify = verify(&signature, message_hash.as_ref()).await?;
+    ic_cdk::println!("bool_verify  ,: {:?}", bool_verify);
+
     ic_cdk::println!("signature  , {:?}", signature);
-
-    let recovery_id_even: u8 = 0; // For even y-coordinate (v = 0)
-    let recovery_id_odd: u8 = 1; // For odd y-coordinate (v = 1)
-
     // Create two signatures: one for even and one for odd y-coordinate
     let signature_even = Signature::from_bytes_and_parity(&signature, false)
         .expect("BUG: failed to create a signature with even y-coordinate");
@@ -400,48 +423,3 @@ pub async fn send_eth(
 
     Ok(result_odd)
 }
-
-// {
-//     "chainId": "11155111",
-//     "type": "EIP-1559",
-//     "valid": true,
-//     "hash": "0x10bafb28e4e307618befbe77935604bed1a58c8abf3d1509af8d5ed777d5be3e",
-//     "nonce": "23",
-//     "gasLimit": "51000",
-//     "maxFeePerGas": "50000000000",
-//     "maxPriorityFeePerGas": "30000000000",
-//     "from": "0x894e7Ad997D33D2B15634ABB2358624aDF05B0e5",
-//     "to": "0x8da1867ab5ee5385dc72f5901bc9bd16f580d157",
-//     "publicKey": "0x04024f9cd747c0ad2ee7978b018d1a78021621429cc3bbc69c6e6a4a49436241b82775c74f63a273afd6728d368b2cdbe47459133ec7e20be602cbf1e6ec5b3c08",
-//     "v": "01",
-//     "r": "fc38eaa213c0aaaaf21d48f439908c01419affdc6348875fc1e7bdfca5acccc6",
-//     "s": "067fae19c31125071e1c44d2ca60b354581161f6902bfd09c1229c93ac3ccb51",
-//     "value": "111",
-//     "input": "0x02024f9cd747c0ad2ee7978b018d1a78021621429cc3bbc69c6e6a4a49436241b8",
-//     "functionHash": "0x02024f9c",
-//     "possibleFunctions": []
-//   }
-
-// {
-//     "chainId": "11155111",
-//     "type": "EIP-1559",
-//     "valid": true,
-//     "hash": "0x0b2f964a2e1db0acda517d36e549e548d5aa9daa79f3108391f8b2e6842ed348",
-//     "nonce": "25",
-//     "gasLimit": "51000",
-//     "maxFeePerGas": "50000000000",
-//     "maxPriorityFeePerGas": "30000000000",
-//     "from": "0x894e7Ad997D33D2B15634ABB2358624aDF05B0e5",
-//     "to": "0x8da1867ab5ee5385dc72f5901bc9bd16f580d157",
-//     "publicKey": "0x04024f9cd747c0ad2ee7978b018d1a78021621429cc3bbc69c6e6a4a49436241b82775c74f63a273afd6728d368b2cdbe47459133ec7e20be602cbf1e6ec5b3c08",
-//     "v": "01",
-//     "r": "d7ace7ec3747f875114c8fb39ac8c8f3c49baeafee42d170eec7ffe30c879f38",
-//     "s": "43fd75a4be8e81d74f40bfc0e0a7c03090873dbfff629ff8072f3fcd3335262b",
-//     "value": "111",
-//     "input": "0x02024f9cd747c0ad2ee7978b018d1a78021621429cc3bbc69c6e6a4a49436241b8",
-//     "functionHash": "0x02024f9c",
-//     "possibleFunctions": []
-//   }
-
-// If signature[63] % 2 == 0, it typically indicates that the y coordinate of the public key is even, thus setting the parity to 0.
-// If signature[63] % 2 != 0, it indicates that the y coordinate is odd, setting the parity to 1.
