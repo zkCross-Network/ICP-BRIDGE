@@ -47,12 +47,12 @@ pub async fn generate_key_pair() -> Result<String, String> {
     // let derivation_path: Vec<Vec<u8>> = vec![vec![132, 121, 211], vec![102, 112, 213],vec![121, 234, 211]]; // Example derivation path
     //  let derivation_path=[];
     let request = EcdsaPublicKeyArgument {
-        canister_id: None,
-        derivation_path: vec![canister_id_blob],
+      
         key_id: EcdsaKeyId {
             curve: EcdsaCurve::Secp256k1,
             name: ecdsa_key.to_string(),
         },
+        ..Default::default()
     };
 
     let (response,) = ecdsa_public_key(request)
