@@ -5,6 +5,7 @@ use evm_rpc_canister_types::EvmRpcCanister;
 
 use evm_rpc_canister_types::EthSepoliaService;
 use evm_rpc_canister_types::RpcServices;
+use evm_rpc_canister_types::SendRawTransactionResult;
 use ic_cdk::api::management_canister::http_request::http_request;
 use ic_cdk::api::management_canister::http_request::HttpMethod;
 use evm_rpc_canister_types::MultiGetTransactionReceiptResult;

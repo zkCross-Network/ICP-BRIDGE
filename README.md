@@ -34,7 +34,7 @@ It is used to send the amount of eth from the canister address to the destinatio
 (Notes:-)
 
 For local inside ecdsa signing
-Use key -> `dfx_test_key `
+Use key -> `test_key_1 `
 
 For Mainnet 
 Use  key -> `test_key_1` or `key_1`
