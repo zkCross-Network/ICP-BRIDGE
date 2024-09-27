@@ -1,13 +1,39 @@
+use crate::helper::get_network_config;
+use candid::CandidType;
+use candid::Principal;
 use ethers_core::types::Address;
 use ic_cdk::api::management_canister::ecdsa::{
     ecdsa_public_key, EcdsaCurve, EcdsaKeyId, EcdsaPublicKeyArgument,
 };
 use ic_cdk::id;
 use k256::PublicKey;
-use std::env;
-use crate::helper::get_network_config;
+use serde::Serialize;
 
+use lazy_static::lazy_static;
 use sha3::{Digest, Keccak256};
+use std::sync::Mutex;
+
+pub struct PublicKeyStore {
+    pub public_key_hex: String,
+}
+// Create a static instance of PublicKeyStore using lazy_static
+lazy_static! {
+    static ref PUBLIC_KEY_STORE: Mutex<Option<PublicKeyStore>> = Mutex::new(None);
+}
+
+impl PublicKeyStore {
+    // Function to store the public key
+    pub fn store(public_key_hex: String) {
+        let mut store = PUBLIC_KEY_STORE.lock().unwrap();
+        *store = Some(PublicKeyStore { public_key_hex });
+    }
+
+    // Function to retrieve the stored public key (returns an Option)
+    pub fn get() -> Option<String> {
+        let store = PUBLIC_KEY_STORE.lock().unwrap();
+        store.as_ref().map(|s| s.public_key_hex.clone())
+    }
+}
 
 #[ic_cdk::update]
 pub async fn generate_key_pair() -> Result<String, String> {
@@ -16,22 +42,30 @@ pub async fn generate_key_pair() -> Result<String, String> {
     // Request the public key from the management canister
 
     let canister_principal = id();
-   
+    let canister_id_blob = ic_cdk::id().as_slice().to_vec();
+
+    // let derivation_path: Vec<Vec<u8>> = vec![vec![132, 121, 211], vec![102, 112, 213],vec![121, 234, 211]]; // Example derivation path
+    //  let derivation_path=[];
     let request = EcdsaPublicKeyArgument {
-        canister_id: None,
-        derivation_path: vec![],
+      
         key_id: EcdsaKeyId {
             curve: EcdsaCurve::Secp256k1,
             name: ecdsa_key.to_string(),
         },
+        ..Default::default()
     };
 
     let (response,) = ecdsa_public_key(request)
         .await
         .map_err(|e| format!("ecdsa_public_key failed {:?}", e))?;
 
+    ic_cdk::println!("response , {:?}", response);
+
     // Convert the public key bytes to an Ethereum address
     let public_key_hex = hex::encode(&response.public_key);
+    ic_cdk::println!("stored public_key_hex: {:?}", public_key_hex);
+
+    PublicKeyStore::store(public_key_hex.clone()); // Store the public key
 
     let ethereum_address = pubkey_bytes_to_address(&response.public_key);
     ic_cdk::println!("Public key: {}", public_key_hex);

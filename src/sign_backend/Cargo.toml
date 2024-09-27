@@ -29,5 +29,4 @@ k256 = { version = "0.12.0", features = ["ecdsa"] }
 getrandom = { version = "0.2", features = ["custom"] }
 ethers = "2.0" 
 num-bigint = "0.4"
-dotenv = "0.15" # Check for the latest version on crates.io
-dotenv_codegen = "0.15"
+lazy_static = "1.4"

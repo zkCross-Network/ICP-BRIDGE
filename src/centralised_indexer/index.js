@@ -16,18 +16,20 @@ const evmBlockScanner = async () => {
     console.log("idenityt", identity.getPrincipal().toString());
 
     const canisterId = "br5f7-7uaaa-aaaaa-qaaca-cai";
+    // const canisterId="5qtxp-vyaaa-aaaap-qh5rq-cai";
 
     const signBackend = createActor(canisterId, {
       agentOptions: {
         identity,
         host: "http://127.0.0.1:8080",  
+        // host :"https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=5qtxp-vyaaa-aaaap-qh5rq-cai",
       },
     });
 
     console.log("signBackend", signBackend);
     //recheck missed Lock Events on common contract
     //   console.log("Gettings logs for evmBLockScanner: ", network);
-    const fromBlockNumber = 80958043;
+    const fromBlockNumber = 82685375;
 
     //   const fromBlockNumber = await redis.getLastSyncBlockNumber(
     //     network,
