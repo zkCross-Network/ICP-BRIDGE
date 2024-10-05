@@ -1,4 +1,4 @@
-use crate::helper::get_network_config;
+use crate::config::get_network_config;
 use candid::CandidType;
 use candid::Principal;
 use ethers_core::types::Address;

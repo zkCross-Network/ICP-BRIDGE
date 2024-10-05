@@ -106,6 +106,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
+		"type":"function"
 	}
 ]

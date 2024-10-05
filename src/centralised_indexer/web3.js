@@ -23,7 +23,7 @@ import * as alchemy from "alchemy-sdk";
 
 export const gettokenAndAddress = () => {
   // 
-  let address="0x054b0D625d936ee0B172c73926A1D517Da7d2197";
+  let address="0x3d669B4d801CcB67b274ce80D40272502F0CdFDf";
   // let address = "0xFaFCeF66155B0140AFaa2987Bbecf16D38125FdE"; -> local 
   let token = "0xbacef2640862B42eECcFeAb9Bf750476aE7decc6";
   //lock token 
@@ -39,7 +39,7 @@ export const getcontractInstance = async (network, tokenSymbol) => {
 
   let contract = new ethers.Contract(address, abi, provider);
 
-  console.log("contact",contract);
+  // console.log("contact",contract);
 
   return contract;
 };
@@ -100,7 +100,7 @@ export const getLogs = async (
       fromBlock: i,
       toBlock: i + interval,
     });
-    // console.log("logs: ", logs)
+    console.log("logs: ", logs)
     allLogs.push(...logs);
   }
   return allLogs;
