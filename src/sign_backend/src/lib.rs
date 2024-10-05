@@ -17,10 +17,10 @@ use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+mod config;
 mod helper;
 mod key_pair;
 mod send_eth;
-mod config;
 
 pub const EVM_RPC_CANISTER_ID: Principal =
     Principal::from_slice(b"\x00\x00\x00\x00\x02\x30\x00\xCC\x01\x01"); // 7hfb6-caaaa-aaaar-qadga-cai
@@ -42,7 +42,6 @@ pub struct PriceResponse {
 pub struct Currency {
     usd: f64,
 }
-
 
 #[ic_cdk::update]
 async fn fetch_crypto_prices_and_calculate_ethereum(amount_nat: f64) -> Result<f64, String> {
@@ -131,8 +130,8 @@ pub async fn verify_trans(
     use std::str::FromStr;
     let amount_nat =
         f64::from_str(&amount).map_err(|e| format!("Failed to convert amount to Nat: {:?}", e))?;
-    let release_eth = fetch_crypto_prices_and_calculate_ethereum(amount_nat).await;
-    ic_cdk::println!("release_eth {:?}", release_eth);
+    // let release_eth = fetch_crypto_prices_and_calculate_ethereum(amount_nat).await;
+    // ic_cdk::println!("release_eth {:?}", release_eth);
 
     use crate::MultiGetTransactionReceiptResult::Consistent;
     use evm_rpc_canister_types::GetTransactionReceiptResult;
@@ -158,7 +157,7 @@ pub async fn verify_trans(
         Consistent(GetTransactionReceiptResult::Ok(Some(TransactionReceipt {
             status, ..
         }))) => {
-            let result = send_eth::send_eth(to, release_eth?, dest_chain_id).await;
+            let result = send_eth::send_eth(to, amount_nat, dest_chain_id).await;
             ic_cdk::println!("Transaction result: {:?}", result);
         }
         _ => ic_cdk::println!("Unexpected result"),
