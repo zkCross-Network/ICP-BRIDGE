@@ -5,11 +5,11 @@ use alloy_primitives::keccak256;
 
 use candid::{Nat, Principal};
 
-
 use ethers_core::types::Eip1559TransactionRequest;
 use ethers_core::types::H160;
 use evm_rpc_canister_types::EthSepoliaService;
 
+use ethers_core::abi::{Contract, Token};
 use evm_rpc_canister_types::MultiSendRawTransactionResult;
 use evm_rpc_canister_types::RpcServices;
 use evm_rpc_canister_types::SendRawTransactionResult;
@@ -17,7 +17,6 @@ use evm_rpc_canister_types::{
     BlockTag, EvmRpcCanister, GetTransactionCountArgs, GetTransactionCountResult,
     MultiGetTransactionCountResult,
 };
-use ethers_core::{abi::{Contract, Token}};
 use ic_cdk::api::management_canister::ecdsa::ecdsa_public_key;
 use ic_cdk::api::management_canister::ecdsa::sign_with_ecdsa;
 use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyArgument;
@@ -36,16 +35,15 @@ pub const EVM_RPC_CANISTER_ID: Principal =
 pub const EVM_RPC: EvmRpcCanister = EvmRpcCanister(EVM_RPC_CANISTER_ID);
 
 use crate::helper::estimate_transaction_fees;
-use crate::helper::get_network_config;
+use crate::config::get_network_config;
 use crate::helper::nat_to_u256;
 use crate::helper::nat_to_u64;
 
-
-
 fn key_id() -> EcdsaKeyId {
+    let (_, ecdsa_key) = get_network_config();
     EcdsaKeyId {
         curve: EcdsaCurve::Secp256k1,
-        name: "dfx_test_key".to_string(), // use EcdsaKeyId::default() for mainnet use test_key_1 for testnet and dfx_test_key for local deployment
+        name: ecdsa_key.to_string(), // use EcdsaKeyId::default() for mainnet use test_key_1 for testnet and dfx_test_key for local deployment
     }
 }
 
@@ -121,7 +119,6 @@ pub async fn send_eth(
         address: canister_address.to_string(),
         block: block_tag,
     };
-    
 
     let get_transaction_count_args_clone = get_transaction_count_args.clone();
 
@@ -141,8 +138,7 @@ pub async fn send_eth(
             GetTransactionCountResult::Err(error) => {
                 return Err(format!(
                     "failed to get transaction count for {:?}, error: {:?}",
-                    get_transaction_count_args,
-                    error
+                    get_transaction_count_args, error
                 ));
             }
         },
@@ -189,7 +185,11 @@ pub async fn send_eth(
 
     let tx = Eip1559TransactionRequest {
         from: None,
-        to: Some(H160::from_str(&to).map_err(|e| format!("Invalid 'to' address: {}", e))?.into()),
+        to: Some(
+            H160::from_str(&to)
+                .map_err(|e| format!("Invalid 'to' address: {}", e))?
+                .into(),
+        ),
         gas: Some(gas_limit.into()),
         value: Some(value),
         nonce: Some(nat_to_u256(nonce)),
@@ -206,7 +206,7 @@ pub async fn send_eth(
 
     let y_parity = y_parity(&txhash.as_slice(), &signature.signature, &pubkey.public_key);
     ic_cdk::println!("y_parity: {:?}", y_parity);
-    
+
     let signature = ethers_core::types::Signature {
         r: U256::from_big_endian(&signature.signature[0..32]),
         s: U256::from_big_endian(&signature.signature[32..64]),
@@ -231,61 +231,57 @@ pub async fn send_eth(
     };
 
     let result = EVM_RPC
-    .eth_send_raw_transaction(
-        RpcServices::EthSepolia(Some(vec![EthSepoliaService::Alchemy])),
-        None,
-        signed_tx.clone(),
-        20_000_000_000,
-    )
-    .await
-    .map_err(|e| format!("Failed to call eth_sendRawTransaction:"));
+        .eth_send_raw_transaction(
+            RpcServices::EthSepolia(Some(vec![EthSepoliaService::Alchemy])),
+            None,
+            signed_tx.clone(),
+            20_000_000_000,
+        )
+        .await
+        .map_err(|e| format!("Failed to call eth_sendRawTransaction:"));
 
-let result = match result {
-    Ok(res) => (res,),  // This will create a tuple with one element
-    Err(e) => return Err(format!("Error")),  // Return early in case of error
-};
+    let result = match result {
+        Ok(res) => (res,), // This will create a tuple with one element
+        Err(e) => return Err(format!("Error")), // Return early in case of error
+    };
 
-match result {
-    ((MultiSendRawTransactionResult::Consistent(status),),) => match status {
-        SendRawTransactionResult::Ok(status) => Ok(evm_rpc_canister_types::SendRawTransactionResult::Ok(status)),
-        SendRawTransactionResult::Err(e) => {
-            Err(format!("Error: ", ))
+    match result {
+        ((MultiSendRawTransactionResult::Consistent(status),),) => match status {
+            SendRawTransactionResult::Ok(status) => {
+                Ok(evm_rpc_canister_types::SendRawTransactionResult::Ok(status))
+            }
+            SendRawTransactionResult::Err(e) => Err(format!("Error: ",)),
+        },
+        ((MultiSendRawTransactionResult::Inconsistent(_),),) => {
+            Err("Status is inconsistent".to_string())
         }
-    },
-    ((MultiSendRawTransactionResult::Inconsistent(_),),) => {
-        Err("Status is inconsistent".to_string())
     }
 }
 
-}
-
-
-    // Extract the result
-    // match result {
-    //     (MultiSendRawTransactionResult::Consistent(send_result),) => {
-    //         match send_result {
-    //             SendRawTransactionResult::Ok(tx_status) => {
-    //                 // Convert SendRawTransactionStatus to String
-    //                 Ok(vec![Token::String(format!("{:?}", tx_status))])
-    //             },
-    //             SendRawTransactionResult::Err(err) => Err(format!("Transaction failed: {:?}", err)),
-    //         }
-    //     }
-    //     (MultiSendRawTransactionResult::Inconsistent(results),) => {
-    //         let errors: Vec<String> = results
-    //             .into_iter()
-    //             .map(|(service, send_result)| match send_result {
-    //                 SendRawTransactionResult::Ok(tx_status) => format!("Success with status: {:?}", tx_status),
-    //                 SendRawTransactionResult::Err(err) => format!("Service {:?} failed: {:?}", service, err),
-    //             })
-    //             .collect();
-    //         Err(format!("Inconsistent results: {:?}", errors))
-    //     }
-    // }
-    
+// Extract the result
+// match result {
+//     (MultiSendRawTransactionResult::Consistent(send_result),) => {
+//         match send_result {
+//             SendRawTransactionResult::Ok(tx_status) => {
+//                 // Convert SendRawTransactionStatus to String
+//                 Ok(vec![Token::String(format!("{:?}", tx_status))])
+//             },
+//             SendRawTransactionResult::Err(err) => Err(format!("Transaction failed: {:?}", err)),
+//         }
+//     }
+//     (MultiSendRawTransactionResult::Inconsistent(results),) => {
+//         let errors: Vec<String> = results
+//             .into_iter()
+//             .map(|(service, send_result)| match send_result {
+//                 SendRawTransactionResult::Ok(tx_status) => format!("Success with status: {:?}", tx_status),
+//                 SendRawTransactionResult::Err(err) => format!("Service {:?} failed: {:?}", service, err),
+//             })
+//             .collect();
+//         Err(format!("Inconsistent results: {:?}", errors))
+//     }
 // }
 
-
+// }
 
 // #[ic_cdk::update]
 // pub async fn send_eth(
@@ -339,7 +335,7 @@ match result {
 //         },
 //         MultiGetTransactionCountResult::Inconsistent(inconsistent_results) => {
 //             ic_cdk::trap(&format!(
-//                   "inconsistent results when retrieving transaction count for {:?}. Received results: {:?}", 
+//                   "inconsistent results when retrieving transaction count for {:?}. Received results: {:?}",
 //                   get_transaction_count_args, // Use the original args here
 //                   inconsistent_results
 //               ))
@@ -406,7 +402,6 @@ match result {
 //         max_priority_fee_per_gas: Some(max_priority_fee_per_gas.into()),
 //         max_fee_per_gas: Some(max_fee_per_gas.into()),
 //     };
-
 
 //     let mut unsigned_tx_bytes = tx.rlp(chain_id).to_vec();
 //     unsigned_tx_bytes.insert(0, EIP1559_TX_ID);
