@@ -39,7 +39,7 @@ export const getcontractInstance = async (network, tokenSymbol) => {
 
   let contract = new ethers.Contract(address, abi, provider);
 
-  console.log("contact",contract);
+  // console.log("contact",contract);
 
   return contract;
 };

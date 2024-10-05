@@ -12,7 +12,7 @@ const evmBlockScanner = async (fromBlockNumber) => {
       new Uint8Array(Array.from({ length: 32 }).fill(0))
     );
 
-    console.log("idenity", identity.getPrincipal().toString());
+    // console.log("idenity", identity.getPrincipal().toString());
 
     // const canisterId = "bkyz2-fmaaa-aaaaa-qaaaq-cai";
     const canisterId="5qtxp-vyaaa-aaaap-qh5rq-cai";
@@ -25,7 +25,7 @@ const evmBlockScanner = async (fromBlockNumber) => {
       },
     });
 
-    console.log("signBackend", signBackend);
+    // console.log("signBackend", signBackend);
     //recheck missed Lock Events on common contract
     //   console.log("Gettings logs for evmBLockScanner: ", network);
     let fromBlockNumber = 86202385;
@@ -46,14 +46,14 @@ const evmBlockScanner = async (fromBlockNumber) => {
 
     const contract = await web3.getcontractInstance();
     const filter = contract.filters["TokenTransferred"]?.();
-    console.log("Filter: ", filter);
+    // console.log("Filter: ", filter);
     const logs = await web3.getLogs(
       contract,
       filter,
       fromBlockNumber,
       toBlockNumber
     );
-    console.log("Logs got from event: ", logs);
+    // console.log("Logs got from event: ", logs);
     let transac;
     let des;
     let amount;
