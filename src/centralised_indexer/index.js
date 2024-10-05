@@ -1,7 +1,7 @@
 import * as web3 from "./web3.js";
 import { HttpAgent } from "@dfinity/agent";
 
-import { canisterId, createActor } from "../declarations/sign_backend/index.js";
+import { canisterId, createActor } from "./declarations/sign_backend/index.js";
 import { Ed25519KeyIdentity } from "@dfinity/identity";
 import cron from "node-cron";
 import fs from "fs";
