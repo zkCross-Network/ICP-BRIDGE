@@ -91,7 +91,7 @@ export const getLogs = async (
   fromBlock,
   toBlock
 ) => {
-  const interval = 1000;
+  const interval = 10;
   const provider = contract.provider;
   const allLogs = [];
   for (let i = fromBlock; i < toBlock; i += interval) {
