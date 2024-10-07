@@ -6,7 +6,7 @@ import { Ed25519KeyIdentity } from "@dfinity/identity";
 import cron from "node-cron";
 import fs from "fs";
 
-const evmBlockScanner = async (fromBlockNumber) => {
+const evmBlockScanner = async () => {
   try {
     const identity = Ed25519KeyIdentity.generate(
       new Uint8Array(Array.from({ length: 32 }).fill(0))
@@ -53,7 +53,7 @@ const evmBlockScanner = async (fromBlockNumber) => {
       fromBlockNumber,
       toBlockNumber
     );
-    // console.log("Logs got from event: ", logs);
+    console.log("Logs got from event: ", logs);
     let transac;
     let des;
     let amount;
@@ -68,19 +68,19 @@ const evmBlockScanner = async (fromBlockNumber) => {
       transac = log.transactionHash;
     }
 
-    if (!transac || !des || !amount || !dest_chain_id) {
-      console.log("No logs found");
-      return;
+    if (transac && des && amount && dest_chain_id) {
+      const result = await signBackend.verify_trans(
+        transac,
+        des,
+        amount,
+        dest_chain_id
+      );
+      console.log("Signed backend", result.Ok);
     }
-    const result = await signBackend.verify_trans(
-      transac,
-      des,
-      amount,
-      dest_chain_id
-    );
-    console.log("Signed backend", result.Ok);
+  
+   await fs.promises.writeFile("block.txt", toBlockNumber.toString() , "utf-8");
 
-    fs.writeFileSync("block.txt", toBlockNumber.toString(), "utf-8");
+  
 
     // for (const log of logs) {
     //   const parsedLog = contract.interface.parseLog(log);
@@ -98,20 +98,17 @@ const evmBlockScanner = async (fromBlockNumber) => {
     console.log("Starting evmBlockScanner");
     // evmBlockScanner();
     // loggers.logger.error(`🚫 | error in EVM block Scanner`, e.message);
+  } finally {
+    evmBlockScanner();
   }
 };
 
 //run evmBlockScanner as a cron job
 
-cron.schedule("*/10 * * * * *", () => {
-  console.log("Running EVM Block Scanner");
-  evmBlockScanner();
-  console.log("To Block Number: ", toBlockNumber);
-});
-
-// evmBlockScanner().then(() => {
-//   console.log("EVM Block Scanner started");
-// }).catch((e) => {
-//   console.log("Error in EVM Block Scanner: ", e);
-
+// cron.schedule("*/10 * * * * *", async () => {
+//   console.log("Running EVM Block Scanner");
+//   await evmBlockScanner();
+//   console.log("To Block Number: ", toBlockNumber);
 // });
+
+evmBlockScanner();

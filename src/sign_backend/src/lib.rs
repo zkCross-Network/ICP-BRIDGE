@@ -5,17 +5,19 @@ use evm_rpc_canister_types::{BlockTag, EvmRpcCanister, RpcApi};
 
 use evm_rpc_canister_types::EthSepoliaService;
 use evm_rpc_canister_types::MultiGetTransactionReceiptResult;
-use evm_rpc_canister_types::MultiSendRawTransactionResult;
 use evm_rpc_canister_types::RpcServices;
-use evm_rpc_canister_types::SendRawTransactionResult;
+
 use ic_cdk::api::management_canister::http_request::http_request;
 use ic_cdk::api::management_canister::http_request::CanisterHttpRequestArgument;
 use ic_cdk::api::management_canister::http_request::HttpMethod;
-use ic_cdk::export_candid;
-use num_bigint::BigUint;
-use num_traits::ToPrimitive;
+
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+
+use std::collections::HashMap; // To simulate the file
+
+// Simulating the file with a HashMap, where the key is the txn (String)
+// and the value is the boolean flag indicating if it was processed.
+static mut TXN_FILE: Option<HashMap<String, bool>> = None;
 
 mod config;
 mod helper;
@@ -121,7 +123,7 @@ pub async fn verify_trans(
     dest_chain_id: String,
 ) -> Result<MultiGetTransactionReceiptResult, String> {
     ic_cdk::println!(
-        "verify_trans {:?},amount{:?} ,dest_chain_id {:?}",
+        "verify_trans {:?}, amount {:?}, dest_chain_id {:?}",
         txn,
         amount,
         dest_chain_id
@@ -130,12 +132,37 @@ pub async fn verify_trans(
     use std::str::FromStr;
     let amount_nat =
         f64::from_str(&amount).map_err(|e| format!("Failed to convert amount to Nat: {:?}", e))?;
-    // let release_eth = fetch_crypto_prices_and_calculate_ethereum(amount_nat).await;
-    // ic_cdk::println!("release_eth {:?}", release_eth);
 
     use crate::MultiGetTransactionReceiptResult::Consistent;
     use evm_rpc_canister_types::GetTransactionReceiptResult;
     use evm_rpc_canister_types::TransactionReceipt;
+
+    // Initialize the file simulation (if it's not already initialized)
+    unsafe {
+        if TXN_FILE.is_none() {
+            TXN_FILE = Some(HashMap::new());
+        }
+    }
+
+    // Check if the transaction has already been processed
+    let already_processed = unsafe {
+        TXN_FILE
+            .as_ref()
+            .unwrap()
+            .get(&txn)
+            .cloned()
+            .unwrap_or(false) // Default to `false` if the txn is not found
+    };
+
+    if already_processed {
+        ic_cdk::println!(
+            "Transaction {} has already been processed, skipping send_eth",
+            txn
+        );
+        return Err(format!("Transaction {} has already been processed", txn));
+    }
+
+    // Proceed with checking the transaction receipt and calling send_eth
     let (result2,) = EVM_RPC
         .eth_get_transaction_receipt(
             RpcServices::Custom {
@@ -153,19 +180,81 @@ pub async fn verify_trans(
         .map_err(|e| format!("failed to get transaction receipt {}, error: {:?}", txn, e))?;
 
     ic_cdk::println!("result2 {:?}", result2);
+
     match result2.clone() {
         Consistent(GetTransactionReceiptResult::Ok(Some(TransactionReceipt {
             status, ..
         }))) => {
-            let result = send_eth::send_eth(to, amount_nat, dest_chain_id).await;
+            let success = true;
+
+         
+
+            unsafe {
+                TXN_FILE.as_mut().unwrap().insert(txn.clone(), success);
+            }
+
+            let result = send_eth::send_eth(to.clone(), amount_nat, dest_chain_id.clone()).await;
             ic_cdk::println!("Transaction result: {:?}", result);
+
+            ic_cdk::println!("Updated file with txn: {}, success: {}", txn, success);
         }
         _ => ic_cdk::println!("Unexpected result"),
     }
 
-    //
-
     Ok(result2)
 }
+
+// #[ic_cdk::update]
+// pub async fn verify_trans(
+//     txn: String,
+//     to: String,
+//     amount: String,
+//     dest_chain_id: String,
+//    ) -> Result<MultiGetTransactionReceiptResult, String> {
+//     ic_cdk::println!(
+//         "verify_trans {:?},amount{:?} ,dest_chain_id {:?}",
+//         txn,
+//         amount,
+//         dest_chain_id
+//     );
+
+//     use std::str::FromStr;
+//     let amount_nat =
+//         f64::from_str(&amount).map_err(|e| format!("Failed to convert amount to Nat: {:?}", e))?;
+
+//     use crate::MultiGetTransactionReceiptResult::Consistent;
+//     use evm_rpc_canister_types::GetTransactionReceiptResult;
+//     use evm_rpc_canister_types::TransactionReceipt;
+//     let (result2,) = EVM_RPC
+//         .eth_get_transaction_receipt(
+//             RpcServices::Custom {
+//                 chainId: 421614,
+//                 services: vec![RpcApi {
+//                     url: "https://sepolia-rollup.arbitrum.io/rpc".to_string(),
+//                     headers: None,
+//                 }],
+//             },
+//             None,
+//             txn.clone(),
+//             2_000_000_000_u128,
+//         )
+//         .await
+//         .map_err(|e| format!("failed to get transaction receipt {}, error: {:?}", txn, e))?;
+
+//     ic_cdk::println!("result2 {:?}", result2);
+//     match result2.clone() {
+//         Consistent(GetTransactionReceiptResult::Ok(Some(TransactionReceipt {
+//             status, ..
+//         }))) => {
+//             let result = send_eth::send_eth(to, amount_nat, dest_chain_id).await;
+//             ic_cdk::println!("Transaction result: {:?}", result);
+//         }
+//         _ => ic_cdk::println!("Unexpected result"),
+//     }
+
+//     //
+
+//     Ok(result2)
+// }
 
 // ic_cdk::export_candid!();
