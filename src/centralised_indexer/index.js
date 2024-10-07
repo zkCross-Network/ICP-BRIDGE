@@ -6,7 +6,7 @@ import { Ed25519KeyIdentity } from "@dfinity/identity";
 import cron from "node-cron";
 import fs from "fs";
 
-const evmBlockScanner = async (fromBlockNumber) => {
+const evmBlockScanner = async () => {
   try {
     const identity = Ed25519KeyIdentity.generate(
       new Uint8Array(Array.from({ length: 32 }).fill(0))
@@ -103,9 +103,9 @@ const evmBlockScanner = async (fromBlockNumber) => {
 
 //run evmBlockScanner as a cron job
 
-cron.schedule("*/10 * * * * *", () => {
+cron.schedule("*/10 * * * * *", async () => {
   console.log("Running EVM Block Scanner");
-  evmBlockScanner();
+  await evmBlockScanner();
   console.log("To Block Number: ", toBlockNumber);
 });
 
