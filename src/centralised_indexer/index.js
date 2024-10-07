@@ -17,13 +17,13 @@ const evmBlockScanner = async () => {
     // const canisterId = "bkyz2-fmaaa-aaaaa-qaaaq-cai";
     const canisterId="5qtxp-vyaaa-aaaap-qh5rq-cai";
 
-    // const signBackend = createActor(canisterId, {
-    //   agentOptions: {
-    //     identity,
-    //     // host: "http://127.0.0.1:4943",
-    //     host :"https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=5qtxp-vyaaa-aaaap-qh5rq-cai",
-    //   },
-    // });
+    const signBackend = createActor(canisterId, {
+      agentOptions: {
+        identity,
+        // host: "http://127.0.0.1:4943",
+        host :"https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=5qtxp-vyaaa-aaaap-qh5rq-cai",
+      },
+    });
 
     // console.log("signBackend", signBackend);
     //recheck missed Lock Events on common contract
